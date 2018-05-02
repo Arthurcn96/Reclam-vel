@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>Jazz Calendar</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
+  <script src="key.js"></script>
+	<script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+	<script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+    	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDid4-fwxKWBmpdvdXF7I2G4z1aBvav3fw"></script>
+	<script type=
+"text/javascript">
+		$(document).on('swiperight', "#start", function() {
+			$( "body" ).pagecontainer( "change", "#camera" );
+		});
+		$(document).on('swipeleft', "#start", function() {
+			$( "body" ).pagecontainer( "change", "#mapa" );
+		});
+		$(document).on('swiperight', "#mapa", function() {
+			$( "body" ).pagecontainer( "change", "#start" );
+		});
+		$(document).on('swipeleft', "#camera", function() {
+			$( "body" ).pagecontainer( "change", "#start" );
+		});
+	</script>
+</head>
+<style>
+    #container {
+        margin: 6px;
+    }
+
+    #btnLocation {
+        display: default;
+    }
+    #map-canvas {
+        height: 400px;
+        width: 100
+    }
+</style>
+
+<script>
+    var options;
+    window.onload = function() {
+        //document.addEventListener('deviceready', init);
+        init();
+        $("#data_hora").val(new Date().toJSON().slice(0, 19));
+        document.getElementById('btnSave').addEventListener('click', saveData);
+        db = window.openDatabase("chamadoos",  "1.0", "Mobile", 200000);
+        document.getElementById('btnTakePicture').addEventListener('click', takePic);
+        document.getElementById('btnClear').addEventListener('click',function(){
+           document.getElementById('imgArea').src="";
+        });
+    }
+
+    function init() {
+
+
+        document.getElementById('btnLocation').style.display = "block";
+        options = { maximumAge: 3000,
+                   timeout: 5000,
+                   enableHighAccuracy:true
+                  };
+    }
+
+     function getLocation(){
+         navigator.geolocation.getCurrentPosition(success, error, options)
+     }
+
+    function success(position) {
+        var lat = position.coords.latitude;
+        var long = position.coords.longitude;
+        var altitude = position.coords.altitude;
+
+        document.getElementById('lat').innerHTML = lat;
+        document.getElementById('long').innerHTML = long;
+        document.getElementById('alt').innerHTML = altitude;
+
+
+        var mapOptions = {
+            center: { lat: lat, lng: long},
+            zoom: 15
+            };
+        var map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+
+    }
+
+    function error(e) {
+        alert(e.message);
+    }
+
+ function clearScreen() {
+     document.getElementById('map-canvas').innerHTML = ""; document.getElementById('map-canvas').style.backgroundColor = "white"; document.getElementById('result').innerHTML = "";
+ }
+
+
+      function takePic(e)              {
+          var options = {
+              quality: 80,
+              destinationType: Camera.DestinationType.FILE_URI,
+              encodingType: Camera.EncodingType.JPEG,
+              mediaType: Camera.MediaType.PICTURE,
+              targetWidth: 1200,
+              targetHeight: 800
+          }
+          navigator.camera.getPicture(success,fail, options);
+      }
+
+      function success(thePicture)              {
+          var image = document.getElementById('imgArea');
+          //alert(thePicture);
+          image.src = thePicture;
+      }
+
+      function fail(e)              {
+          alert("Image failed: " + e.message);
+      }
+
+
+
+      function saveData(e)
+      {
+           //Errado: inverteram a ordem dos callbacks
+          //db.transaction(saveRecord, onSuccess, onError);
+          db.transaction(saveRecord, onError, onSuccess);
+      }
+      function saveRecord(transaction)
+      {
+          var placa = document.getElementById('placa').value;
+          var descricao = document.getElementById('descricao').value;
+          var local = document.getElementById('local').value;
+          var container = document.getElementById('container').value;
+
+          transaction.executeSql('CREATE TABLE IF NOT EXISTS chamadosList (id INTEGER PRIMARY KEY AUTOINCREMENT, placa TEXT NOT NULL, Descricao TEXT NOT NULL, Local TEXT NOT NULL, Data TEXT NOT NULL) ');
+
+          var sql= "INSERT INTO chamadosList (placa,Descricao,Local,Data) VALUES ('" + placa +"', '" + descricao +"', '" + local +"', '" + container + "')";
+          console.log(sql);
+          transaction.executeSql(sql);
+          transaction.executeSql("SELECT * FROM chamadosList", [], getSuccess, getError);
+      }
+      function getSuccess(tx, result)
+      {
+          var rows = result.rows;
+          for(var x=0; x< rows.length; x++){
+              var placa = result.rows[x].placa;
+              var descricao = result.rows[x].Descricao;
+              var local = result.rows[x].Local;
+              var container = result.rows[x].Data;
+              var out = "<li><a><h3>" + placa + "</h3> <br>" + descricao + "<br>" +local +"</a></li>";
+              document.getElementById('salvo').innerHTML += out;
+            }
+          $('#salvo').listview('refresh');
+      }
+      function getError(e){
+          console.log(e);
+      }
+
+      function onSuccess(){
+          console.log("Record Saved");
+      }
+
+      function onError(error){
+          console.log(error);
+      }
+
+      //GEOLOCALIZAÇÃO#####################
+
+      function init()
+      {
+          navigator.geolocation.getCurrentPosition(geoSuccess, geoError);
+      }
+
+      function geoSuccess(position)
+      {
+          var lat = position.coords.latitude;
+          var long = position.coords.longitude;
+
+          document.getElementById('lat').innerHTML = lat;
+          document.getElementById('long').innerHTML = long;
+          getAreaInfo(lat,long);
+      }
+
+      function getAreaInfo(lat,long)
+      {
+          //https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=-33.8670,151.1957&radius=500&types=food&key=YOUR_API_KEY
+
+          var url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=";
+          url += lat + ",";
+          url += long;
+          url += "&radius=500&types=food&key=" + key;
+          xmlhttp = new XMLHttpRequest();
+          xmlhttp.onreadystatechange = processPlace;
+          xmlhttp.open("GET", url, true);
+          xmlhttp.send();
+
+      }
+
+      function processPlace()
+      {
+          var out="";
+          if(xmlhttp.readyState==4){
+              var theJSON = xmlhttp.responseText;
+
+              var result = JSON.parse(theJSON);
+              var resultArray = result.results;
+              for(var x = 0; x < resultArray.length; x++)
+              {
+                  out += "<h2>" + resultArray[x].name + "</h2>";
+                  out += "<br/>";
+                  out += resultArray[x].vicinity;
+              }
+
+              document.getElementById('result').innerHTML = out;
+          }
+      }
+
+      function geoError(e)
+      {
+          alert(e.message);
+      }
+
+          function getLocation()
+          {
+              navigator.geolocation.getCurrentPosition(geoSuccess, geoFailure, options);
+          }
+
+
+         function geoSuccess(position)
+          {
+                  var latitude = position.
+                  coords.latitude;
+
+                  var long = position.coords.
+                  longitude;
+
+                  var out ="<strong>Latitude:</strong> " + latitude;
+
+                  out +="<br/><strong>Longitude: </strong> " +long;
+
+                  document.getElementById('result').innerHTML = out;
+
+                  var mapOptions = {
+
+                      center: { lat:latitude,
+                               lng: long},
+                      zoom: 15
+
+                  };
+
+                  var map = new google.maps.Map(document.getElementById('map-canvas'),mapOptions);
+
+          }
+
+          function geoFailure(message)
+          {
+
+              alert("Error:" + message.                message);
+
+          }
+
+          function clearScreen()
+          {
+              document.getElementById('map-canvas').innerHTML = "";
+              document.getElementById('map-canvas').style.backgroundColor ="white";
+              document.getElementById('result').innerHTML = "";
+          }
+
+          var lat;
+          var long;
+</script><!-- COMBAK: TIRAR UMA FOTOGRAFIA -->
+
+<body>
+
+<div data-role="page" id="home">
+	<div data-role="header">
+		<h1>START</h1>
+	</div>
+
+  <form>
+        <label>Login:</label>
+        <input type="text" name="idText" value="Digite o Login"><br><br>
+        <label>Senha:</label>
+        <input type="password" name="idPassword" value="123456"><br><br>
+        <input type="button" onclick="location.href='index.html#start'" name="btnLogin" value="Login"><br>
+  </form>
+
+
+</div>
+
+<div data-role="page" id="start">
+
+  <div data-role="header">
+      <h1>Reclamóvel</h1>
+  </div> <!-- header -->
+
+  <div data-role="main" class="ui-content">
+      <ul data-role="listview">
+         <li data-role="list-divider">Chamados Feitos</li>
+
+         <li><a href="#"><h3>Placas: OPQ-7854</h3>
+             <p>Atravessou o sinal vermelho.</p></a> </li>
+
+             <ul id="salvo" data-role="listview"></ul>
+
+         <li data-role="list-divider">Chamados Recebidos</li>
+
+         <li><a href="#"><h3>Placas: PAQ-3235</h3>
+             <p>Tem que aprender a usar seta!!</p></a> </li>
+
+      </ul>
+
+  </div> <!-- main -->
+
+
+  <button onclick="location.href='index.html#start2'">Adicionar</button>
+  <div data-role="footer" id="footer">
+
+
+
+</div><!-- footer -->
+
+</div>
+
+
+<div data-role="page" id="start2">
+
+    <div data-role="header">
+        <h1>Reclamóvel</h1>
+    </div>
+    <!-- header -->
+
+    <div data-role="main" class="ui-content">
+
+        <div id="container">
+            <label for="data_hora">Data</label>
+            <input type="datetime-local" id="data_hora" />
+            <label for="local">Local</label>
+
+            <div id="container">
+
+
+            <div id="map-canvas"></div>
+
+
+            </div><!-- container-->
+
+
+
+            <label for="placa">Placa</label>
+            <input type="text" id="placa" />
+
+            <label for="descricao">Descrição</label>
+            <textarea id="descricao" name="message" rows="10" cols="30"></textarea>
+
+
+            <button id="btnSave" type="submit" onclick="location.href='index.html#start'">Salvar Chamado</button>
+
+        </div>
+
+        <button onclick="location.href='index.html#start'">Cancelar</button>
+
+
+        <footer>
+
+        </footer>
+
+
+    </div>
+    <!-- main -->
+
+
+
+</div><!--page!-->
+
+<div data-role="page" id="mapa">
+
+
+			<div id="container">
+
+
+					<button id="btnLocation" onclick="getLocation()">Pegar Localização</button>
+
+					<div id="result"></div>
+
+					<div id="map-canvas"></div>
+
+
+			</div><!-- container-->
+
+
+
+</div>
+
+
+<div data-role="page" id="camera">
+
+	<div data-role="header">
+		<h1> CAMERA </h1>
+	</div>
+
+	<div class="ui-content" role="main">
+
+    <button id="btnTakePicture">Camera</button>
+
+	</div>
+
+</div>
+
+<script type="text/javascript" src="cordova.js"></script>
+</body>
+</html>

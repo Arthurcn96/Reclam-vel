@@ -1,0 +1,49 @@
+{
+  "prepare_queue": {
+    "installed": [],
+    "uninstalled": []
+  },
+  "config_munge": {
+    "files": {}
+  },
+  "installed_plugins": {
+    "cordova-plugin-battery-status": {
+      "PACKAGE_NAME": "br.ufes.arthur"
+    },
+    "cordova-plugin-camera": {
+      "PACKAGE_NAME": "br.ufes.arthur"
+    },
+    "cordova-plugin-media-capture": {
+      "PACKAGE_NAME": "br.ufes.arthur"
+    },
+    "cordova-plugin-device": {
+      "PACKAGE_NAME": "br.ufes.arthur"
+    },
+    "cordova-plugin-dialogs": {
+      "PACKAGE_NAME": "br.ufes.arthur"
+    },
+    "cordova-plugin-geolocation": {
+      "PACKAGE_NAME": "br.ufes.arthur"
+    },
+    "cordova-plugin-globalization": {
+      "PACKAGE_NAME": "br.ufes.arthur"
+    },
+    "cordova-plugin-inappbrowser": {
+      "PACKAGE_NAME": "br.ufes.arthur"
+    },
+    "cordova-plugin-network-information": {
+      "PACKAGE_NAME": "br.ufes.arthur"
+    },
+    "cordova-plugin-vibration": {
+      "PACKAGE_NAME": "br.ufes.arthur"
+    }
+  },
+  "dependent_plugins": {
+    "cordova-plugin-compat": {
+      "PACKAGE_NAME": "br.ufes.arthur"
+    },
+    "cordova-plugin-file": {
+      "PACKAGE_NAME": "br.ufes.arthur"
+    }
+  }
+}
