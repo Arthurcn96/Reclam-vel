@@ -1,12 +1,12 @@
-# Hello World PhoneGap Template [![bitHound Score][bithound-img]][bithound-url]
+# PhoneGap Template [![bitHound Score][bithound-img]][bithound-url]
 
-A PhoneGap Hello World template
+A PhoneGap template
 
 ## Usage
 
 #### PhoneGap CLI
 
-The hello-world template is the default when you create a new application using the [phonegap-cli][phonegap-cli-url].
+The template is the default when you create a new application using the [phonegap-cli][phonegap-cli-url].
 
     phonegap create my-app
 
